@@ -55,6 +55,7 @@ function create_site_info_cpt() {
         ),
         'public'      => false,
         'has_archive' => false,
+        'show_ui'     => true,
         'supports'    => array( 'title' ),
     ) );
 }
