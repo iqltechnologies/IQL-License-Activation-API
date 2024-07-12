@@ -1,0 +1,60 @@
+<?php
+/*
+Plugin Name: IQL Plugin Activation Endpoint
+Description: Handles incoming site info data and stores it as a private custom post type.
+Version: 1.0.0
+Author: IQL Technologies
+*/
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly.
+}
+
+add_action( 'rest_api_init', function () {
+    register_rest_route( 'site-info/v1', '/receive', array(
+        'methods'  => 'POST',
+        'callback' => 'handle_site_info',
+        'permission_callback' => '__return_true',
+    ) );
+} );
+
+function handle_site_info( WP_REST_Request $request ) {
+    $data = $request->get_json_params();
+
+        $title = $data['domain'].' - '.sanitize_text_field( $data['plugin_name'] ) ;
+    if ( ! empty( $data ) ) {
+        $post_id = wp_insert_post( array(
+            'post_type'   => 'site_info',
+            'post_title'  => $title,
+            'post_status' => 'private',
+        ) );
+
+        if ( $post_id ) {
+            update_post_meta( $post_id, '_plugin_version', sanitize_text_field( $data['plugin_version'] ) );
+            update_post_meta( $post_id, '_plugin_version', sanitize_text_field( $data['plugin_version'] ) );
+            update_post_meta( $post_id, '_date', sanitize_text_field( $data['date'] ) );
+            update_post_meta( $post_id, '_users', $data['users'] );
+            update_post_meta( $post_id, '_wp_email', sanitize_email( $data['wp_email'] ) );
+            update_post_meta( $post_id, '_activation_date', sanitize_text_field( $data['activation_date'] ) );
+            update_post_meta( $post_id, '_server_ip', sanitize_text_field( $data['server_ip'] ) );
+
+            return new WP_REST_Response( array( 'success' => true ), 200 );
+        }
+    }
+
+    return new WP_REST_Response( array( 'success' => false ), 400 );
+}
+
+add_action( 'init', 'create_site_info_cpt' );
+
+function create_site_info_cpt() {
+    register_post_type( 'site_info', array(
+        'labels' => array(
+            'name'          => __( 'Plugin Activator' ),
+            'singular_name' => __( 'Plugin Activators' )
+        ),
+        'public'      => false,
+        'has_archive' => false,
+        'supports'    => array( 'title' ),
+    ) );
+}
